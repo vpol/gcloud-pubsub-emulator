@@ -1,0 +1,9 @@
+[[subscription]]
+project = "12345"
+subscription = "sub1"
+topic = "topic1"
+
+[[subscription]]
+project = "23456"
+subscription = "sub2"
+topic = "topic2"
