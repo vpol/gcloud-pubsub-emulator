@@ -9,7 +9,7 @@ RUN chmod +x /usr/bin/wait-for
 
 COPY ./pubsubc /src
 WORKDIR /src
-RUN go build
+RUN go build -o pubsubc
 
 
 FROM google/cloud-sdk:alpine
@@ -20,10 +20,9 @@ COPY run.sh /run.sh
 
 RUN chmod +x /run.sh
 
-RUN apk add --no-cache --update \
-        netcat-openbsd \
-        openjdk8-jre && \
-    gcloud components install beta pubsub-emulator
+RUN apk add --no-cache --update netcat-openbsd openjdk17-jre-headless && \
+    gcloud components install beta pubsub-emulator && \
+    gcloud components update
 
 EXPOSE 8681
 
