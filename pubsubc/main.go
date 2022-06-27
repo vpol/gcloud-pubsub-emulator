@@ -12,26 +12,51 @@ import (
 	"time"
 )
 
-func create(ctx context.Context, log zerolog.Logger, client *pubsub.Client, subscription string, topic string) error {
+func create(ctx context.Context, log zerolog.Logger, client *pubsub.Client, sub Subscription) error {
 
-	logger := log.With().Str("subscription", subscription).Str("topic", topic).Logger()
+	logger := log.With().Str("subscription", sub.Subscription).Str("topic", sub.Topic).Logger()
 
 	logger.Trace().Msg("client connected")
 
-	t, err := client.CreateTopic(ctx, topic)
+	t, err := client.CreateTopic(ctx, sub.Topic)
 	if err != nil {
 		if !strings.Contains(err.Error(), "AlreadyExists") {
-			return fmt.Errorf("unable to create topic %q: %w", topic, err)
+			return fmt.Errorf("unable to create topic %q: %w", sub.Topic, err)
 		}
 
-		t = client.Topic(topic)
+		t = client.Topic(sub.Topic)
 	}
 
 	logger.Trace().Msg("topic created")
 
-	_, err = client.CreateSubscription(ctx, subscription, pubsub.SubscriptionConfig{Topic: t})
+	cfg := pubsub.SubscriptionConfig{Topic: t}
+
+	ackDeadline := 60
+	if sub.AckDeadlineSeconds > 0 {
+		ackDeadline = sub.AckDeadlineSeconds
+	}
+	cfg.AckDeadline = time.Duration(ackDeadline) * time.Second
+
+	if cfg.RetryPolicy == nil {
+		cfg.RetryPolicy = &pubsub.RetryPolicy{}
+	}
+
+	minBackoff := 10
+	if sub.MinBackoff > 0 && sub.MinBackoff < 600 {
+		minBackoff = sub.MinBackoff
+	}
+	cfg.RetryPolicy.MinimumBackoff = time.Duration(minBackoff) * time.Second
+
+	maxbackoff := 10
+	if sub.MaxBackoff > 0 && sub.MaxBackoff < 600 {
+		maxbackoff = sub.MaxBackoff
+	}
+
+	cfg.RetryPolicy.MaximumBackoff = time.Duration(maxbackoff) * time.Second
+
+	_, err = client.CreateSubscription(ctx, sub.Subscription, cfg)
 	if err != nil {
-		return fmt.Errorf("unable to create subscription %q on topic %q: %w", subscription, topic, err)
+		return fmt.Errorf("unable to create subscription %q on topic %q: %w", sub.Subscription, sub.Topic, err)
 	}
 
 	logger.Trace().Msg("subscription created")
@@ -40,9 +65,12 @@ func create(ctx context.Context, log zerolog.Logger, client *pubsub.Client, subs
 }
 
 type Subscription struct {
-	Project      string `toml:"project"`
-	Subscription string `toml:"subscription"`
-	Topic        string `toml:"topic"`
+	Project            string `toml:"project"`
+	Subscription       string `toml:"subscription"`
+	Topic              string `toml:"topic"`
+	AckDeadlineSeconds int    `toml:"ackdeadline"`
+	MinBackoff         int    `toml:"minbackoff"`
+	MaxBackoff         int    `toml:"maxbackoff"`
 }
 
 type ConfigFile struct {
@@ -103,7 +131,7 @@ func main() {
 
 		logger := log.With().Str("project", v.Project).Logger()
 
-		err := create(context.TODO(), logger, c, v.Subscription, v.Topic)
+		err := create(context.TODO(), logger, c, v)
 		if err != nil {
 			logger.Fatal().Err(err).Msg("failed to process subscription")
 		}
