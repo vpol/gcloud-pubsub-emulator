@@ -2,7 +2,7 @@
 
 How to use:
 
-1. write config, ie. ./gpubsub/config.toml
+Write config, ie. ./gpubsub/config.toml
 
 ```toml
 [[subscription]]
@@ -12,7 +12,7 @@ topic = "sample-topic"
 ```
 
 
-2. add it to your docker compose
+Add it to your docker compose
 
 ```
   gpubsub:
@@ -23,11 +23,33 @@ topic = "sample-topic"
       - LOGLEVEL=trace
     volumes:
       - ./gpubsub:/conf
-    ports:
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "gpubsub", "8682" ]
+      start_period: 5s
+      interval: 2s
+      timeout: 1s
+      retries: 20
+    expose:
       - "8682:8682"
+    ports:
+      - "8681:8681"
 ```
 
-3. run
+Use it as dependency for you magic service
+
+```
+  debezium:
+    restart: on-failure
+    image: debezium/server:2.0.0.Beta1
+    volumes:
+      - ./debezium/conf:/debezium/conf
+      - ./debezium/data:/debezium/data
+    depends_on:
+      gpubsub:
+        condition: service_healthy
+```
+
+Run
 
 ```
 ➜  docker-compose run gpubsub
