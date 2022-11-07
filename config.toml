@@ -1,0 +1,4 @@
+[[subscription]]
+project = "local-docker"
+subscription = "test-sub"
+topic = "test"

@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+
+  gpubsub:
+    restart: on-failure
+    image: vpol/gcloud-pubsub-emulator:latest
+    environment:
+      - CONFIG_FILE=/conf/config.toml
+      - LOGLEVEL=trace
+    volumes:
+      - ./config.toml:/conf/config.toml
+    ports:
+      - "8682:8682"
+      - "8681:8681"
+    networks:
+      - test
+
+networks:
+  test: { }
