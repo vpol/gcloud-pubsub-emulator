@@ -1,4 +1,4 @@
-FROM golang:bullseye as builder
+FROM --platform=$BUILDPLATFORM golang:bullseye as builder
 
 RUN apt install curl git
 
@@ -10,7 +10,7 @@ WORKDIR /src
 RUN go build -o pubsubc
 
 
-FROM google/cloud-sdk:slim
+FROM --platform=$BUILDPLATFORM google/cloud-sdk:debian_component_based
 
 COPY --from=builder /usr/bin/wait-for /usr/local/bin
 COPY --from=builder /src/pubsubc /usr/local/bin
@@ -18,7 +18,10 @@ COPY run.sh /run.sh
 
 RUN chmod +x /run.sh
 
-RUN apt update && apt install -y netcat-openbsd openjdk-11-jdk-headless google-cloud-sdk google-cloud-sdk-pubsub-emulator
+RUN apt update && apt install -y netcat-openbsd openjdk-11-jdk-headless
+
+RUN gcloud components install beta pubsub-emulator
+RUN gcloud components update
 
 EXPOSE 8681
 
