@@ -1,10 +1,8 @@
-version: '3.8'
-
 services:
 
   gpubsub:
     restart: on-failure
-    image: vpol/gcloud-pubsub-emulator:latest
+    image: gcloud-pubsub-emulator:latest
     environment:
       - CONFIG_FILE=/conf/config.toml
       - LOGLEVEL=trace
