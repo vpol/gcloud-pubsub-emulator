@@ -5,7 +5,7 @@ LOG_LEVEL ?= debug
 IMAGE_NAME ?= gcloud-pubsub-emulator
 IMAGE_TAG ?= latest
 
-GOLANGCI_VERSION ?= v1.58.0
+GOLANGCI_VERSION = `git -c 'versionsort.suffix=-' ls-remote --exit-code --refs --sort='version:refname' --tags https://github.com/golangci/golangci-lint 'v2.*.*' | tail --lines=1 | cut -d"/" -f3`
 
 all: clean lint build
 
@@ -18,7 +18,7 @@ clean:
 
 lint:
 	@echo "--> Running linters"
-	go run github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_VERSION} run -c .golangci.yml
+	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@${GOLANGCI_VERSION} run -c .golangci.yml
 
 build-docker:
 	docker buildx build --tag "${IMAGE_NAME}:${IMAGE_TAG}" -f Dockerfile .

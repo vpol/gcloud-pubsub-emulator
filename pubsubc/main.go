@@ -1,15 +1,19 @@
 package main
 
 import (
-	"cloud.google.com/go/pubsub"
 	"context"
 	"fmt"
-	"github.com/BurntSushi/toml"
-	"github.com/caarlos0/env/v6"
-	"github.com/rs/zerolog"
+
+	"cloud.google.com/go/pubsub"
 	"github.com/rs/zerolog/log"
+
+	"github.com/rs/zerolog"
+
 	"strings"
 	"time"
+
+	"github.com/BurntSushi/toml"
+	"github.com/caarlos0/env/v6"
 )
 
 func create(ctx context.Context, log zerolog.Logger, client *pubsub.Client, sub Subscription) error {

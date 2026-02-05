@@ -1,25 +1,23 @@
-FROM --platform=$BUILDPLATFORM golang:bullseye as builder
-
-RUN apt install curl git
+FROM --platform=$BUILDPLATFORM golang:alpine AS builder
 
 COPY ./pubsubc /src
 WORKDIR /src
 RUN go build -o pubsubc
 
-FROM --platform=$BUILDPLATFORM gcr.io/google.com/cloudsdktool/google-cloud-cli:debian_component_based as runner
+FROM --platform=$BUILDPLATFORM gcr.io/google.com/cloudsdktool/google-cloud-cli:alpine AS runner
 
-RUN curl -s https://raw.githubusercontent.com/eficode/wait-for/master/wait-for -o /usr/local/bin/wait-for
-RUN chmod +x /usr/local/bin/wait-for
+RUN apk add --no-cache curl openjdk17-jre-headless netcat-openbsd
+
+RUN curl -s https://raw.githubusercontent.com/eficode/wait-for/master/wait-for -o /usr/local/bin/wait-for && \
+    chmod +x /usr/local/bin/wait-for
 
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
 COPY --from=builder /src/pubsubc /usr/local/bin
 
-RUN apt update && apt install -y netcat-openbsd openjdk-17-jdk-headless
-
-RUN gcloud components install beta pubsub-emulator
-RUN gcloud components update
+RUN gcloud components install beta pubsub-emulator && \
+    gcloud components update
 
 EXPOSE 8681
 
